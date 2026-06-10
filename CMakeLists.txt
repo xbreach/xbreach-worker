@@ -36,6 +36,8 @@ add_library(xbreach_worker_lib
   src/db/job_repository.cpp
   src/db/clickhouse_migrations.cpp
   src/db/clickhouse_writer.cpp
+  src/worker/job_processor.cpp
+  src/worker/worker_loop.cpp
 )
 target_include_directories(xbreach_worker_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(xbreach_worker_lib
