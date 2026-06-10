@@ -151,6 +151,47 @@ TEST(Parser, TwoTokenDomainStaysCredential) {
     EXPECT_EQ(outcome.fields.password, "hunter2");
 }
 
+TEST(Parser, LabeledPasswordFieldSchemeless) {
+    const auto outcome = parse_data(
+        "account.jetbrains.com/oauth/login/sign-up:Password::ChaEunWoo^261:ChaEunWoo^261");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "account.jetbrains.com/oauth/login/sign-up");
+    EXPECT_EQ(outcome.fields.identity, "");
+    EXPECT_EQ(outcome.fields.password, "ChaEunWoo^261");
+}
+
+TEST(Parser, LabeledPasswordFieldWithScheme) {
+    const auto outcome = parse_data(
+        "https://remotedesktop.google.com/access/session/7b077146-3991-1438-f870-469e8c7abaf0:"
+        "Password: 666666:666666");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "https://remotedesktop.google.com/access/session/"
+                                  "7b077146-3991-1438-f870-469e8c7abaf0");
+    EXPECT_EQ(outcome.fields.identity, "");
+    EXPECT_EQ(outcome.fields.password, "666666");
+}
+
+TEST(Parser, NormalUlpWithDeviceUsername) {
+    const auto outcome =
+        parse_data("https://remotedesktop.google.com/access:Notebook Licence:123441");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "https://remotedesktop.google.com/access");
+    EXPECT_EQ(outcome.fields.identity, "Notebook Licence");
+    EXPECT_EQ(outcome.fields.password, "123441");
+}
+
+TEST(Parser, PasswordLiterallyPasswordStaysPassword) {
+    // "password" as the final field is the value, not a label.
+    const auto outcome = parse_data("site.com/login:user:password");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.identity, "user");
+    EXPECT_EQ(outcome.fields.password, "password");
+}
+
 TEST(Parser, UrlWithoutCredentialsIsRejected) {
     const auto outcome = parse_data("https://site.com");
     EXPECT_EQ(outcome.category, LineCategory::Rejected);
