@@ -20,6 +20,7 @@ COPY vcpkg.json .
 COPY CMakeLists.txt CMakePresets.json ./
 COPY src ./src
 COPY tests ./tests
+COPY migrations_clickhouse ./migrations_clickhouse
 
 RUN cmake --preset linux -DXBREACH_WORKER_BUILD_TESTS=OFF \
     && cmake --build --preset linux
@@ -29,4 +30,6 @@ FROM debian:bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /src/build/linux/xbreach-worker /usr/local/bin/xbreach-worker
+COPY --from=builder /src/migrations_clickhouse /opt/xbreach/migrations_clickhouse
+ENV XBREACH_CLICKHOUSE_MIGRATIONS_PATH=/opt/xbreach/migrations_clickhouse
 ENTRYPOINT ["/usr/local/bin/xbreach-worker"]
