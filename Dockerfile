@@ -7,6 +7,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git curl zip unzip tar ca-certificates pkg-config \
         build-essential cmake ninja-build \
+        python3 python3-venv python3-pip \
+        bison flex \
     && rm -rf /var/lib/apt/lists/*
 
 ENV VCPKG_ROOT=/opt/vcpkg
@@ -22,7 +24,8 @@ COPY src ./src
 COPY tests ./tests
 COPY migrations_clickhouse ./migrations_clickhouse
 
-RUN cmake --preset linux -DXBREACH_WORKER_BUILD_TESTS=OFF \
+RUN --mount=type=cache,target=/root/.cache/vcpkg \
+    cmake --preset linux -DXBREACH_WORKER_BUILD_TESTS=OFF \
     && cmake --build --preset linux
 
 # ---- runtime ----
