@@ -15,6 +15,7 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(libpqxx CONFIG REQUIRED)
 
 # Core library shared by the executable and the tests. Feature PRs add their
 # translation units (config, snowflake, io, parse, crypto, db, worker) here.
@@ -26,6 +27,7 @@ add_library(xbreach_worker_lib
   src/parse/parser.cpp
   src/parse/normalizer.cpp
   src/crypto/hashing.cpp
+  src/db/job_repository.cpp
 )
 target_include_directories(xbreach_worker_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(xbreach_worker_lib
@@ -34,6 +36,7 @@ target_link_libraries(xbreach_worker_lib
     ZLIB::ZLIB
     zstd::libzstd
     OpenSSL::Crypto
+    libpqxx::pqxx
 )
 
 add_executable(xbreach-worker src/main.cpp)
