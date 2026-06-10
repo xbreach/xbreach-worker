@@ -11,24 +11,21 @@ using xbreach::worker::ParsedFields;
 using xbreach::worker::RecordKind;
 using xbreach::worker::sha256_hex;
 
-TEST(Normalizer, EmailLowercasedWithDomainAndHmac) {
+TEST(Normalizer, EmailIdentifierLowercasedWithHmac) {
     ParsedFields fields{RecordKind::EmailPassword, "John.Doe@Example.COM", "secret", ""};
     const LeakRecord record =
         normalize(fields, "John.Doe@Example.COM:secret", {"key", true, false});
-    EXPECT_EQ(record.email, "john.doe@example.com");
-    EXPECT_EQ(record.email_domain, "example.com");
+    EXPECT_EQ(record.identifier, "john.doe@example.com");
     EXPECT_EQ(record.email_hmac, hmac_sha256_hex("key", "john.doe@example.com"));
     EXPECT_EQ(record.password, "secret");
     EXPECT_EQ(record.password_sha256, sha256_hex("secret"));
-    EXPECT_TRUE(record.username.empty());
     EXPECT_TRUE(record.raw_line.empty());
 }
 
-TEST(Normalizer, UsernameRecordHasNoEmailHmac) {
+TEST(Normalizer, UsernameIdentifierHasNoEmailHmac) {
     ParsedFields fields{RecordKind::UserPassword, "admin", "pw", ""};
     const LeakRecord record = normalize(fields, "admin:pw", {"key", true, false});
-    EXPECT_EQ(record.username, "admin");
-    EXPECT_TRUE(record.email.empty());
+    EXPECT_EQ(record.identifier, "admin");
     EXPECT_TRUE(record.email_hmac.empty());
     EXPECT_EQ(record.password_sha256, sha256_hex("pw"));
 }
@@ -38,13 +35,13 @@ TEST(Normalizer, UlpExtractsUrlDomain) {
     const LeakRecord record = normalize(fields, "n/a", {"key", true, false});
     EXPECT_EQ(record.url, "https://Login.Site.com:8080/path");
     EXPECT_EQ(record.url_domain, "login.site.com");
-    EXPECT_EQ(record.username, "bob");
+    EXPECT_EQ(record.identifier, "bob");
 }
 
 TEST(Normalizer, UlpWithEmailIdentityComputesHmac) {
     ParsedFields fields{RecordKind::Ulp, "user@mail.com", "pw", "https://x.com/"};
     const LeakRecord record = normalize(fields, "n/a", {"key", true, false});
-    EXPECT_EQ(record.email, "user@mail.com");
+    EXPECT_EQ(record.identifier, "user@mail.com");
     EXPECT_FALSE(record.email_hmac.empty());
     EXPECT_EQ(record.url_domain, "x.com");
 }

@@ -35,14 +35,10 @@ LeakRecord normalize(const ParsedFields& fields, std::string_view raw_line,
     record.kind = fields.kind;
 
     if (is_email(fields.identity)) {
-        record.email = to_lower(fields.identity);
-        const std::size_t at = record.email.find('@');
-        if (at != std::string::npos) {
-            record.email_domain = record.email.substr(at + 1);
-        }
-        record.email_hmac = hmac_sha256_hex(options.hmac_email_key, record.email);
+        record.identifier = to_lower(fields.identity);
+        record.email_hmac = hmac_sha256_hex(options.hmac_email_key, record.identifier);
     } else {
-        record.username = fields.identity;
+        record.identifier = fields.identity;
     }
 
     if (!fields.url.empty()) {
