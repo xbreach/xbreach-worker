@@ -272,7 +272,39 @@ TryOutcome parse_colon_line(std::string_view line) {
     return classify_tokens(line, tokens, ':');
 }
 
+// Some stealer exports label fields, e.g. "<url>:Password:...:<password>" (the
+// real username is absent). A ":password:"/":username:" with a trailing colon
+// marks a label, whereas a normal "user:password" ends with the password and
+// has no trailing colon. When matched, take the URL before the label and the
+// password from the last field; the identifier is unknown.
+TryOutcome try_labeled_ulp(std::string_view line) {
+    const std::string lowered = to_lower(line);
+    std::size_t pos = lowered.find(":password:");
+    if (pos == std::string::npos) {
+        pos = lowered.find(":username:");
+    }
+    if (pos == std::string::npos) {
+        return not_a_record();
+    }
+    const std::string_view url = line.substr(0, pos);
+    if (url.find("://") == std::string_view::npos && url.find('/') == std::string_view::npos) {
+        return not_a_record(); // not a URL: let normal parsing handle it
+    }
+    const std::string_view rest = line.substr(pos + 10); // skip ":password:"/":username:"
+    const std::size_t last_colon = rest.rfind(':');
+    const std::string_view password =
+        trim((last_colon == std::string_view::npos) ? rest : rest.substr(last_colon + 1));
+    if (password.empty()) {
+        return malformed("labeled line empty password");
+    }
+    return ok(make_ulp(url, "", password));
+}
+
 TryOutcome try_parse_record(std::string_view line) {
+    if (const TryOutcome labeled = try_labeled_ulp(line); labeled.result != TryResult::NotARecord) {
+        return labeled;
+    }
+
     const char delimiter = pick_delimiter(line);
     if (delimiter == ':') {
         return parse_colon_line(line);
