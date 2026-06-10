@@ -95,6 +95,19 @@ bool is_url_continuation(std::string_view token) {
     return value <= 65535;
 }
 
+// A record whose identity is clearly not a login is not useful and is dropped:
+// URL session/query params ("jsessionid=...", containing '=') or form artifacts
+// ("(19)", starting with '('). An empty identity (labeled lines) is kept.
+bool is_junk_identifier(std::string_view identity) {
+    if (identity.empty()) {
+        return false;
+    }
+    if (identity.find('=') != std::string_view::npos) {
+        return true;
+    }
+    return identity.front() == '(';
+}
+
 char pick_delimiter(std::string_view s) {
     for (const char candidate : {':', ';', '|', '\t'}) {
         if (s.find(candidate) != std::string_view::npos) {
@@ -365,6 +378,9 @@ ParseOutcome parse_line(std::string_view raw, std::size_t line_number,
 
     const TryOutcome outcome = try_parse_record(line);
     if (outcome.result == TryResult::Ok) {
+        if (is_junk_identifier(outcome.fields.identity)) {
+            return {LineCategory::Rejected, {}, "junk identifier"};
+        }
         return {LineCategory::Record, outcome.fields, ""};
     }
     if (outcome.result == TryResult::Malformed) {

@@ -231,6 +231,18 @@ TEST(Parser, HeaderTextInWindowIsBannerButRejectedOutside) {
               LineCategory::Rejected);
 }
 
+TEST(Parser, JunkSessionIdentifierIsRejected) {
+    const auto outcome =
+        parse_data("sad2.ancine.gov.br/x:jsessionid=akNkYUaBmmDPMq0NaM0TZDWL:user@x.com:pw");
+    EXPECT_EQ(outcome.category, LineCategory::Rejected);
+}
+
+TEST(Parser, JunkParenthesizedIdentifierIsRejected) {
+    const auto outcome =
+        parse_data("meudetran.ms.gov.br/x_form_add_users/:(19):9:9710-1551:04081983");
+    EXPECT_EQ(outcome.category, LineCategory::Rejected);
+}
+
 TEST(Parser, EmptyPasswordIsRejected) {
     EXPECT_EQ(parse_data("user@mail.com:").category, LineCategory::Rejected);
     EXPECT_EQ(parse_data("admin:").category, LineCategory::Rejected);
