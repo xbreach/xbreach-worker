@@ -40,9 +40,7 @@ void ClickHouseLeakWriter::write_batch(const std::vector<LeakRecord>& records) {
     auto breach_id = std::make_shared<ColumnUInt64>();
     auto line_number = std::make_shared<ColumnUInt64>();
     auto record_kind = std::make_shared<ColumnString>();
-    auto email = std::make_shared<ColumnString>();
-    auto email_domain = std::make_shared<ColumnString>();
-    auto username = std::make_shared<ColumnString>();
+    auto identifier = std::make_shared<ColumnString>();
     auto password = std::make_shared<ColumnString>();
     auto password_sha256 = std::make_shared<ColumnString>();
     auto email_hmac = std::make_shared<ColumnString>();
@@ -57,9 +55,7 @@ void ClickHouseLeakWriter::write_batch(const std::vector<LeakRecord>& records) {
         breach_id->Append(record.breach_id.value_or(0));
         line_number->Append(record.line_number);
         record_kind->Append(std::string(to_string(record.kind)));
-        email->Append(record.email);
-        email_domain->Append(record.email_domain);
-        username->Append(record.username);
+        identifier->Append(record.identifier);
         password->Append(record.password);
         password_sha256->Append(record.password_sha256);
         email_hmac->Append(record.email_hmac);
@@ -75,9 +71,7 @@ void ClickHouseLeakWriter::write_batch(const std::vector<LeakRecord>& records) {
     block.AppendColumn("breach_id", breach_id);
     block.AppendColumn("line_number", line_number);
     block.AppendColumn("record_kind", record_kind);
-    block.AppendColumn("email", email);
-    block.AppendColumn("email_domain", email_domain);
-    block.AppendColumn("username", username);
+    block.AppendColumn("identifier", identifier);
     block.AppendColumn("password", password);
     block.AppendColumn("password_sha256", password_sha256);
     block.AppendColumn("email_hmac", email_hmac);
