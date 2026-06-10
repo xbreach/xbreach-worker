@@ -70,6 +70,24 @@ TEST(Parser, UlpWithPortKeepsUrl) {
     EXPECT_EQ(outcome.fields.password, "pw");
 }
 
+TEST(Parser, SchemelessUlp) {
+    const auto outcome = parse_data("facebook.com/dyi:bob:secret");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "facebook.com/dyi");
+    EXPECT_EQ(outcome.fields.identity, "bob");
+    EXPECT_EQ(outcome.fields.password, "secret");
+}
+
+TEST(Parser, SchemelessUlpWithEmailUser) {
+    const auto outcome = parse_data("intermatia.com/datos_usuario.php:user@mail.com:pw");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "intermatia.com/datos_usuario.php");
+    EXPECT_EQ(outcome.fields.identity, "user@mail.com");
+    EXPECT_EQ(outcome.fields.password, "pw");
+}
+
 TEST(Parser, UrlWithoutCredentialsIsRejected) {
     const auto outcome = parse_data("https://site.com");
     EXPECT_EQ(outcome.category, LineCategory::Rejected);

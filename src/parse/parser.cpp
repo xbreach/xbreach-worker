@@ -43,9 +43,18 @@ bool has_promo_keyword(std::string_view s) {
     });
 }
 
-bool looks_like_url(std::string_view s) {
+// A line is treated as ULP (url:user:password) when it has an explicit scheme
+// or its first ':'-separated field looks like a host/path (contains '/'), which
+// covers the very common scheme-less stealer-log form "host.com/path:user:pass".
+bool looks_like_ulp(std::string_view s) {
     const std::size_t scheme = s.find("://");
-    return scheme != std::string_view::npos && scheme > 0 && scheme <= 10;
+    if (scheme != std::string_view::npos && scheme > 0 && scheme <= 10) {
+        return true;
+    }
+    const std::size_t first_colon = s.find(':');
+    const std::string_view head =
+        (first_colon == std::string_view::npos) ? s : s.substr(0, first_colon);
+    return head.find('/') != std::string_view::npos;
 }
 
 char pick_delimiter(std::string_view s) {
@@ -96,7 +105,10 @@ TryOutcome parse_ulp(std::string_view line) {
     fields.identity = std::string(rest.substr(prev + 1));
     fields.password = std::string(line.substr(last + 1));
 
-    if (fields.url.find("://") == std::string::npos) {
+    // Accept either an explicit scheme or a host/path form (contains '/'); this
+    // also guards against over-splitting a scheme-only line such as
+    // "https://site.com:pass" whose url part would be just "https".
+    if (fields.url.find("://") == std::string::npos && fields.url.find('/') == std::string::npos) {
         return malformed("ulp malformed url");
     }
     if (fields.identity.empty()) {
@@ -109,7 +121,7 @@ TryOutcome parse_ulp(std::string_view line) {
 }
 
 TryOutcome try_parse_record(std::string_view line) {
-    if (looks_like_url(line)) {
+    if (looks_like_ulp(line)) {
         return parse_ulp(line);
     }
 
