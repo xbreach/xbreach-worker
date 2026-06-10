@@ -22,6 +22,7 @@ add_library(xbreach_worker_lib
   src/config.cpp
   src/snowflake.cpp
   src/io/file_reader.cpp
+  src/parse/parser.cpp
 )
 target_include_directories(xbreach_worker_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(xbreach_worker_lib
