@@ -1,0 +1,15 @@
+{
+  "name": "xbreach-worker",
+  "version-string": "0.1.0",
+  "description": "C++ ingestion worker for XBreach: parse/normalize leaks and write to ClickHouse.",
+  "builtin-baseline": "32305df7d0b9a308e6ac454dd98ebfe550342c09",
+  "dependencies": [
+    "libpqxx",
+    "clickhouse-cpp",
+    "openssl",
+    "zstd",
+    "zlib",
+    "spdlog",
+    "gtest"
+  ]
+}
