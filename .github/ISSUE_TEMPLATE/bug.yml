@@ -1,0 +1,50 @@
+name: Bug
+description: Report incorrect worker behavior
+title: "fix(worker): "
+labels: ["type:fix"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Input file/format, config, and how it was run.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria / Definition of Done
+      value: |
+        - [ ] Root cause identified
+        - [ ] Fix implemented with a regression test
+        - [ ] `ctest` passes
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - build
+        - io
+        - parse
+        - crypto
+        - db
+        - clickhouse
+        - worker
+        - infra
+    validations:
+      required: true

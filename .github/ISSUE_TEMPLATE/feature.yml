@@ -1,0 +1,46 @@
+name: Feature
+description: Propose a new capability for the worker
+title: "feat(worker): "
+labels: ["type:feat"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this needed? What problem does it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Files/modules to add or change.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria / Definition of Done
+      description: Checklist that must be true to close this issue.
+      value: |
+        - [ ] Implemented and builds (`cmake --build`)
+        - [ ] Unit tests added and `ctest` passes
+        - [ ] `clang-format --dry-run -Werror` clean
+        - [ ] Docs updated if behavior/config changed
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - build
+        - io
+        - parse
+        - crypto
+        - db
+        - clickhouse
+        - worker
+        - infra
+    validations:
+      required: true

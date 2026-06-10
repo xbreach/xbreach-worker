@@ -1,0 +1,41 @@
+name: Task
+description: A chore, refactor, docs, or infrastructure task
+title: "chore(worker): "
+labels: ["type:chore"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria / Definition of Done
+      value: |
+        - [ ] Work completed as described
+        - [ ] Builds and existing tests still pass
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - build
+        - io
+        - parse
+        - crypto
+        - db
+        - clickhouse
+        - worker
+        - infra
+    validations:
+      required: true
