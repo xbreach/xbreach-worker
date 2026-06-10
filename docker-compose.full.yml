@@ -68,6 +68,7 @@ services:
       XBREACH_POSTGRES_HOST: postgres
       XBREACH_REDIS_HOST: redis
       XBREACH_DATA_PATH: /data/xbreach
+      XBREACH_UPLOAD_MAX_FILE_SIZE_BYTES: ${XBREACH_UPLOAD_MAX_FILE_SIZE_BYTES:-5368709120}
       XBREACH_LOGIN_EMAIL: admin@xbreach.local
       XBREACH_LOGIN_PASSWORD: xbreach
       XBREACH_SESSION_SECRET: change-me-in-production-with-32-bytes-minimum
