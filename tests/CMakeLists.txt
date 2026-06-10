@@ -9,6 +9,7 @@ add_executable(xbreach_worker_tests
   test_hashing.cpp
   test_normalizer.cpp
   test_job_repository.cpp
+  test_clickhouse_migrations.cpp
 )
 target_link_libraries(xbreach_worker_tests
   PRIVATE

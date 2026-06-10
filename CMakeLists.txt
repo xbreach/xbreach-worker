@@ -16,6 +16,12 @@ find_package(ZLIB REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(libpqxx CONFIG REQUIRED)
+# clickhouse-cpp does not ship a CMake config in vcpkg, so locate the static
+# library directly and link its dependencies (abseil, cityhash, lz4) explicitly.
+find_library(CLICKHOUSE_CPP_LIB NAMES clickhouse-cpp-lib REQUIRED)
+find_package(absl CONFIG REQUIRED)
+find_package(cityhash CONFIG REQUIRED)
+find_package(lz4 CONFIG REQUIRED)
 
 # Core library shared by the executable and the tests. Feature PRs add their
 # translation units (config, snowflake, io, parse, crypto, db, worker) here.
@@ -28,6 +34,8 @@ add_library(xbreach_worker_lib
   src/parse/normalizer.cpp
   src/crypto/hashing.cpp
   src/db/job_repository.cpp
+  src/db/clickhouse_migrations.cpp
+  src/db/clickhouse_writer.cpp
 )
 target_include_directories(xbreach_worker_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(xbreach_worker_lib
@@ -37,6 +45,10 @@ target_link_libraries(xbreach_worker_lib
     zstd::libzstd
     OpenSSL::Crypto
     libpqxx::pqxx
+    ${CLICKHOUSE_CPP_LIB}
+    cityhash
+    lz4::lz4
+    absl::int128
 )
 
 add_executable(xbreach-worker src/main.cpp)
