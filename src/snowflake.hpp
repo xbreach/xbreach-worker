@@ -20,6 +20,10 @@ inline constexpr int kNodeIdShift = kSequenceBits;
 inline constexpr int kAppIdShift = kNodeIdShift + kNodeIdBits;
 inline constexpr int kTimestampShift = kAppIdShift + kAppIdBits;
 
+// Small backwards clock movements (NTP/VM resync) are tolerated by clamping to
+// the last timestamp; only a regression larger than this is treated as fatal.
+inline constexpr std::int64_t kMaxBackwardClockMs = 10'000;
+
 // Thread-safe generator of unique, roughly time-ordered 64-bit identifiers.
 class SnowflakeGenerator {
   public:

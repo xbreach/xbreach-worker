@@ -22,7 +22,12 @@ std::uint64_t SnowflakeGenerator::next_id() {
     std::int64_t timestamp_ms = current_millis();
 
     if (timestamp_ms < last_timestamp_ms_) {
-        throw std::runtime_error("system clock moved backwards");
+        // Tolerate small backwards movements (clock resync) by clamping forward
+        // so ids stay monotonic; only a large regression is fatal.
+        if (last_timestamp_ms_ - timestamp_ms > kMaxBackwardClockMs) {
+            throw std::runtime_error("system clock moved backwards");
+        }
+        timestamp_ms = last_timestamp_ms_;
     }
 
     if (timestamp_ms == last_timestamp_ms_) {
