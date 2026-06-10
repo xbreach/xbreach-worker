@@ -29,7 +29,9 @@ RUN --mount=type=cache,target=/root/.cache/vcpkg \
     && cmake --build --preset linux
 
 # ---- runtime ----
-FROM debian:bookworm-slim AS runtime
+# Runtime base must match the builder's glibc/libstdc++ (Ubuntu 24.04), or the
+# binary fails with GLIBC_2.38 / GLIBCXX_3.4.31 not found.
+FROM ubuntu:24.04 AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /src/build/linux/xbreach-worker /usr/local/bin/xbreach-worker
