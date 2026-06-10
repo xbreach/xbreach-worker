@@ -88,6 +88,51 @@ TEST(Parser, SchemelessUlpWithEmailUser) {
     EXPECT_EQ(outcome.fields.password, "pw");
 }
 
+TEST(Parser, BareDomainUlpWithUser) {
+    const auto outcome = parse_data("login.mittwald.de:P625068:786pcs211634");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "login.mittwald.de");
+    EXPECT_EQ(outcome.fields.identity, "P625068");
+    EXPECT_EQ(outcome.fields.password, "786pcs211634");
+}
+
+TEST(Parser, BareDomainUlpWithEmailUser) {
+    const auto outcome = parse_data("accounts.google.com:fiar2126@gmail.com:Fitri123");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "accounts.google.com");
+    EXPECT_EQ(outcome.fields.identity, "fiar2126@gmail.com");
+    EXPECT_EQ(outcome.fields.password, "Fitri123");
+}
+
+TEST(Parser, UrlLastWithScheme) {
+    const auto outcome = parse_data("cbzellb.redroge:pejelece623664:https://www.bol.uol.com.br/");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "https://www.bol.uol.com.br/");
+    EXPECT_EQ(outcome.fields.identity, "cbzellb.redroge");
+    EXPECT_EQ(outcome.fields.password, "pejelece623664");
+}
+
+TEST(Parser, BareDomainUlpOverSemicolon) {
+    const auto outcome = parse_data("decathlon.it;bob;secret");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "decathlon.it");
+    EXPECT_EQ(outcome.fields.identity, "bob");
+    EXPECT_EQ(outcome.fields.password, "secret");
+}
+
+TEST(Parser, TwoTokenDomainStaysCredential) {
+    // "name.surname:password" is a normal credential, not a URL.
+    const auto outcome = parse_data("john.smith:hunter2");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::UserPassword);
+    EXPECT_EQ(outcome.fields.identity, "john.smith");
+    EXPECT_EQ(outcome.fields.password, "hunter2");
+}
+
 TEST(Parser, UrlWithoutCredentialsIsRejected) {
     const auto outcome = parse_data("https://site.com");
     EXPECT_EQ(outcome.category, LineCategory::Rejected);

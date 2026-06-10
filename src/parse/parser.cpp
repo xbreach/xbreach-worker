@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <optional>
+#include <string>
+#include <vector>
 
 namespace xbreach::worker {
 
@@ -43,18 +44,36 @@ bool has_promo_keyword(std::string_view s) {
     });
 }
 
-// A line is treated as ULP (url:user:password) when it has an explicit scheme
-// or its first ':'-separated field looks like a host/path (contains '/'), which
-// covers the very common scheme-less stealer-log form "host.com/path:user:pass".
-bool looks_like_ulp(std::string_view s) {
-    const std::size_t scheme = s.find("://");
-    if (scheme != std::string_view::npos && scheme > 0 && scheme <= 10) {
+// Heuristic, allocation-free host/URL detector (this runs on every line). A
+// token looks like a URL/host when it has a path ('/') or is a bare domain:
+// labels of [A-Za-z0-9-] separated by dots with an alphabetic TLD (2-24 chars).
+bool looks_like_host(std::string_view token) {
+    if (token.empty() || token.find('@') != std::string_view::npos ||
+        token.find(' ') != std::string_view::npos || token.find('\t') != std::string_view::npos) {
+        return false;
+    }
+    if (token.find('/') != std::string_view::npos) {
         return true;
     }
-    const std::size_t first_colon = s.find(':');
-    const std::string_view head =
-        (first_colon == std::string_view::npos) ? s : s.substr(0, first_colon);
-    return head.find('/') != std::string_view::npos;
+    const std::size_t dot = token.rfind('.');
+    if (dot == std::string_view::npos || dot == 0 || dot + 1 >= token.size()) {
+        return false;
+    }
+    const std::string_view tld = token.substr(dot + 1);
+    if (tld.size() < 2 || tld.size() > 24) {
+        return false;
+    }
+    for (const char c : tld) {
+        if (std::isalpha(static_cast<unsigned char>(c)) == 0) {
+            return false;
+        }
+    }
+    for (const char c : token.substr(0, dot)) {
+        if (std::isalnum(static_cast<unsigned char>(c)) == 0 && c != '-' && c != '.') {
+            return false;
+        }
+    }
+    return true;
 }
 
 char pick_delimiter(std::string_view s) {
@@ -64,6 +83,18 @@ char pick_delimiter(std::string_view s) {
         }
     }
     return '\0';
+}
+
+std::vector<std::string_view> split(std::string_view s, char delim) {
+    std::vector<std::string_view> tokens;
+    std::size_t start = 0;
+    for (std::size_t i = 0; i <= s.size(); ++i) {
+        if (i == s.size() || s[i] == delim) {
+            tokens.push_back(s.substr(start, i - start));
+            start = i + 1;
+        }
+    }
+    return tokens;
 }
 
 enum class TryResult { Ok, NotARecord, Malformed };
@@ -77,18 +108,85 @@ struct TryOutcome {
 TryOutcome not_a_record() {
     return {TryResult::NotARecord, {}, ""};
 }
-
 TryOutcome malformed(std::string reason) {
     return {TryResult::Malformed, {}, std::move(reason)};
 }
-
 TryOutcome ok(ParsedFields fields) {
     return {TryResult::Ok, std::move(fields), ""};
 }
 
-TryOutcome parse_ulp(std::string_view line) {
-    // ULP is "<url>:<user>:<password>"; the URL itself contains ':' (scheme,
-    // port), so split the two credentials off the right-hand side.
+ParsedFields make_credential(std::string_view identity, std::string_view password) {
+    ParsedFields fields;
+    fields.kind = is_email(identity) ? RecordKind::EmailPassword : RecordKind::UserPassword;
+    fields.identity = std::string(identity);
+    fields.password = std::string(password);
+    return fields;
+}
+
+ParsedFields make_ulp(std::string_view url, std::string_view identity, std::string_view password) {
+    ParsedFields fields;
+    fields.kind = RecordKind::Ulp;
+    fields.url = std::string(url);
+    fields.identity = std::string(identity);
+    fields.password = std::string(password);
+    return fields;
+}
+
+// Offset of a token (a view into `line`) from the start of the line.
+std::size_t offset_in(std::string_view line, std::string_view token) {
+    return static_cast<std::size_t>(token.data() - line.data());
+}
+
+// Classifies a scheme-less, already-tokenized line. Recognizes url:user:pass and
+// user:pass:url (where the url is a bare host/domain) as ULP, otherwise treats
+// the line as identity:password (the password keeps any remaining delimiters).
+TryOutcome classify_tokens(std::string_view line, const std::vector<std::string_view>& tokens,
+                           char delim) {
+    const std::size_t n = tokens.size();
+    if (n < 2) {
+        return not_a_record();
+    }
+    if (n == 2) {
+        if (tokens[0].empty()) {
+            return malformed("empty identity");
+        }
+        if (tokens[1].empty()) {
+            return malformed("empty password");
+        }
+        return ok(make_credential(tokens[0], tokens[1]));
+    }
+
+    // n >= 3: look for the URL/host at the front or the back.
+    if (looks_like_host(tokens[0]) && !is_email(tokens[0])) {
+        const std::string_view user = tokens[1];
+        const std::string_view password = line.substr(offset_in(line, tokens[2]));
+        if (user.empty() || password.empty()) {
+            return malformed("ulp empty credentials");
+        }
+        return ok(make_ulp(tokens[0], user, password));
+    }
+    if (looks_like_host(tokens.back()) && !is_email(tokens.back())) {
+        const std::string_view user = tokens[0];
+        const std::size_t last_offset = offset_in(line, tokens[n - 1]);
+        const std::size_t pass_offset = offset_in(line, tokens[1]);
+        const std::string_view password = line.substr(pass_offset, (last_offset - 1) - pass_offset);
+        if (user.empty() || password.empty()) {
+            return malformed("ulp empty credentials");
+        }
+        return ok(make_ulp(tokens[n - 1], user, password));
+    }
+
+    if (tokens[0].empty()) {
+        return malformed("empty identity");
+    }
+    const std::string_view password = line.substr(offset_in(line, tokens[1]));
+    (void)delim;
+    return ok(make_credential(tokens[0], password));
+}
+
+// Splits a url-first ULP ("<url>:<user>:<password>") from the right, since the
+// URL may itself contain ':' (scheme, port).
+TryOutcome parse_ulp_url_first(std::string_view line) {
     const std::size_t last = line.rfind(':');
     if (last == std::string_view::npos) {
         return malformed("ulp missing credentials");
@@ -98,51 +196,64 @@ TryOutcome parse_ulp(std::string_view line) {
     if (prev == std::string_view::npos) {
         return malformed("ulp missing credentials");
     }
-
-    ParsedFields fields;
-    fields.kind = RecordKind::Ulp;
-    fields.url = std::string(rest.substr(0, prev));
-    fields.identity = std::string(rest.substr(prev + 1));
-    fields.password = std::string(line.substr(last + 1));
-
-    // Accept either an explicit scheme or a host/path form (contains '/'); this
-    // also guards against over-splitting a scheme-only line such as
-    // "https://site.com:pass" whose url part would be just "https".
-    if (fields.url.find("://") == std::string::npos && fields.url.find('/') == std::string::npos) {
+    const std::string_view url = rest.substr(0, prev);
+    const std::string_view user = rest.substr(prev + 1);
+    const std::string_view password = line.substr(last + 1);
+    if (url.find("://") == std::string_view::npos && url.find('/') == std::string_view::npos) {
         return malformed("ulp malformed url");
     }
-    if (fields.identity.empty()) {
+    if (user.empty()) {
         return malformed("ulp empty username");
     }
-    if (fields.password.empty()) {
+    if (password.empty()) {
         return malformed("ulp empty password");
     }
-    return ok(std::move(fields));
+    return ok(make_ulp(url, user, password));
+}
+
+// Handles colon-delimited lines, accounting for URLs that embed ':' via a
+// scheme. A scheme at the start means url:user:pass; a scheme later means
+// user:pass:url; no scheme means a clean tokenization.
+TryOutcome parse_colon_line(std::string_view line) {
+    const std::size_t scheme = line.find("://");
+    if (scheme != std::string_view::npos) {
+        std::size_t name_start = scheme;
+        while (name_start > 0 &&
+               std::isalpha(static_cast<unsigned char>(line[name_start - 1])) != 0) {
+            --name_start;
+        }
+        if (name_start == 0) {
+            return parse_ulp_url_first(line);
+        }
+        const std::string_view url = line.substr(name_start);
+        std::string_view creds = line.substr(0, name_start);
+        while (!creds.empty() && creds.back() == ':') {
+            creds.remove_suffix(1);
+        }
+        const std::size_t split_at = creds.find(':');
+        if (split_at == std::string_view::npos) {
+            return malformed("ulp missing credentials");
+        }
+        const std::string_view user = creds.substr(0, split_at);
+        const std::string_view password = creds.substr(split_at + 1);
+        if (user.empty() || password.empty()) {
+            return malformed("ulp empty credentials");
+        }
+        return ok(make_ulp(url, user, password));
+    }
+
+    const std::vector<std::string_view> tokens = split(line, ':');
+    return classify_tokens(line, tokens, ':');
 }
 
 TryOutcome try_parse_record(std::string_view line) {
-    if (looks_like_ulp(line)) {
-        return parse_ulp(line);
-    }
-
     const char delimiter = pick_delimiter(line);
+    if (delimiter == ':') {
+        return parse_colon_line(line);
+    }
     if (delimiter != '\0') {
-        // Identity (email/username) never contains the delimiter, so split on
-        // the first occurrence and keep the remainder as the password.
-        const std::size_t pos = line.find(delimiter);
-        const std::string_view identity = line.substr(0, pos);
-        const std::string_view password = line.substr(pos + 1);
-        if (identity.empty()) {
-            return malformed("empty identity");
-        }
-        if (password.empty()) {
-            return malformed("empty password");
-        }
-        ParsedFields fields;
-        fields.kind = is_email(identity) ? RecordKind::EmailPassword : RecordKind::UserPassword;
-        fields.identity = std::string(identity);
-        fields.password = std::string(password);
-        return ok(std::move(fields));
+        const std::vector<std::string_view> tokens = split(line, delimiter);
+        return classify_tokens(line, tokens, delimiter);
     }
 
     // Space is only trusted as a separator when the first token is an email,
@@ -155,11 +266,7 @@ TryOutcome try_parse_record(std::string_view line) {
             if (password.empty()) {
                 return malformed("empty password");
             }
-            ParsedFields fields;
-            fields.kind = RecordKind::EmailPassword;
-            fields.identity = std::string(identity);
-            fields.password = std::string(password);
-            return ok(std::move(fields));
+            return ok(make_credential(identity, password));
         }
     }
 
