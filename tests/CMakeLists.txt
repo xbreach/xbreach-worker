@@ -4,6 +4,7 @@ add_executable(xbreach_worker_tests
   test_smoke.cpp
   test_snowflake.cpp
   test_config.cpp
+  test_file_reader.cpp
 )
 target_link_libraries(xbreach_worker_tests
   PRIVATE
