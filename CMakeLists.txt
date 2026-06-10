@@ -12,6 +12,8 @@ endif()
 option(XBREACH_WORKER_BUILD_TESTS "Build unit tests" ON)
 
 find_package(spdlog CONFIG REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(zstd CONFIG REQUIRED)
 
 # Core library shared by the executable and the tests. Feature PRs add their
 # translation units (config, snowflake, io, parse, crypto, db, worker) here.
@@ -19,9 +21,15 @@ add_library(xbreach_worker_lib
   src/version.cpp
   src/config.cpp
   src/snowflake.cpp
+  src/io/file_reader.cpp
 )
 target_include_directories(xbreach_worker_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(xbreach_worker_lib PUBLIC spdlog::spdlog)
+target_link_libraries(xbreach_worker_lib
+  PUBLIC
+    spdlog::spdlog
+    ZLIB::ZLIB
+    zstd::libzstd
+)
 
 add_executable(xbreach-worker src/main.cpp)
 target_link_libraries(xbreach-worker PRIVATE xbreach_worker_lib)
