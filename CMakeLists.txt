@@ -17,6 +17,8 @@ find_package(spdlog CONFIG REQUIRED)
 # translation units (config, snowflake, io, parse, crypto, db, worker) here.
 add_library(xbreach_worker_lib
   src/version.cpp
+  src/config.cpp
+  src/snowflake.cpp
 )
 target_include_directories(xbreach_worker_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(xbreach_worker_lib PUBLIC spdlog::spdlog)

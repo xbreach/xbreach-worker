@@ -2,6 +2,8 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(xbreach_worker_tests
   test_smoke.cpp
+  test_snowflake.cpp
+  test_config.cpp
 )
 target_link_libraries(xbreach_worker_tests
   PRIVATE
