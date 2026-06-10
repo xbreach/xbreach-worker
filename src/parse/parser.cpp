@@ -76,6 +76,25 @@ bool looks_like_host(std::string_view token) {
     return true;
 }
 
+// A token continues a scheme-less URL when it is a path segment ('/') or a
+// plausible port (all digits, <= 65535). Used to keep "host:port/path" together.
+bool is_url_continuation(std::string_view token) {
+    if (token.find('/') != std::string_view::npos) {
+        return true;
+    }
+    if (token.empty() || token.size() > 5) {
+        return false;
+    }
+    int value = 0;
+    for (const char c : token) {
+        if (std::isdigit(static_cast<unsigned char>(c)) == 0) {
+            return false;
+        }
+        value = value * 10 + (c - '0');
+    }
+    return value <= 65535;
+}
+
 char pick_delimiter(std::string_view s) {
     for (const char candidate : {':', ';', '|', '\t'}) {
         if (s.find(candidate) != std::string_view::npos) {
@@ -158,12 +177,19 @@ TryOutcome classify_tokens(std::string_view line, const std::vector<std::string_
 
     // n >= 3: look for the URL/host at the front or the back.
     if (looks_like_host(tokens[0]) && !is_email(tokens[0])) {
-        const std::string_view user = tokens[1];
-        const std::string_view password = line.substr(offset_in(line, tokens[2]));
+        // The URL may span several tokens when it has a port and/or path
+        // (host:port/path); extend over those before the credentials begin.
+        std::size_t user_index = 1;
+        while (user_index < n - 2 && is_url_continuation(tokens[user_index])) {
+            ++user_index;
+        }
+        const std::string_view url = line.substr(0, offset_in(line, tokens[user_index]) - 1);
+        const std::string_view user = tokens[user_index];
+        const std::string_view password = line.substr(offset_in(line, tokens[user_index + 1]));
         if (user.empty() || password.empty()) {
             return malformed("ulp empty credentials");
         }
-        return ok(make_ulp(tokens[0], user, password));
+        return ok(make_ulp(url, user, password));
     }
     if (looks_like_host(tokens.back()) && !is_email(tokens.back())) {
         const std::string_view user = tokens[0];

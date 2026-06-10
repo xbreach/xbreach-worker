@@ -106,6 +106,24 @@ TEST(Parser, BareDomainUlpWithEmailUser) {
     EXPECT_EQ(outcome.fields.password, "Fitri123");
 }
 
+TEST(Parser, SchemelessUlpWithPortAndPath) {
+    const auto outcome = parse_data("zvornikputevi.com:2083/login/:zvornikputevi:KiNg0708");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "zvornikputevi.com:2083/login/");
+    EXPECT_EQ(outcome.fields.identity, "zvornikputevi");
+    EXPECT_EQ(outcome.fields.password, "KiNg0708");
+}
+
+TEST(Parser, SchemelessUlpWithPort) {
+    const auto outcome = parse_data("host.com:8080:bob:pw");
+    ASSERT_EQ(outcome.category, LineCategory::Record);
+    EXPECT_EQ(outcome.fields.kind, RecordKind::Ulp);
+    EXPECT_EQ(outcome.fields.url, "host.com:8080");
+    EXPECT_EQ(outcome.fields.identity, "bob");
+    EXPECT_EQ(outcome.fields.password, "pw");
+}
+
 TEST(Parser, UrlLastWithScheme) {
     const auto outcome = parse_data("cbzellb.redroge:pejelece623664:https://www.bol.uol.com.br/");
     ASSERT_EQ(outcome.category, LineCategory::Record);
