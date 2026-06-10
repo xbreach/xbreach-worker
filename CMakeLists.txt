@@ -43,14 +43,16 @@ target_include_directories(xbreach_worker_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 target_link_libraries(xbreach_worker_lib
   PUBLIC
     spdlog::spdlog
-    ZLIB::ZLIB
-    zstd::libzstd
     OpenSSL::Crypto
     libpqxx::pqxx
+    # clickhouse-cpp and its dependencies must precede zstd/zlib so GNU ld
+    # resolves their compression symbols (e.g. ZSTD_compress) correctly.
     ${CLICKHOUSE_CPP_LIB}
     cityhash
     lz4::lz4
     absl::int128
+    zstd::libzstd
+    ZLIB::ZLIB
 )
 
 add_executable(xbreach-worker src/main.cpp)
