@@ -16,7 +16,7 @@ enum class LineCategory {
     Rejected, // looked like data but could not be parsed
 };
 
-// Raw fields extracted from a record line, before normalization/hashing.
+// Raw fields extracted from a record line, before normalization.
 struct ParsedFields {
     RecordKind kind = RecordKind::UserPassword;
     std::string identity; // email or username

@@ -48,8 +48,7 @@ int main() {
 
         ProcessorOptions options;
         options.data_path = config.data_path;
-        options.normalize = NormalizeOptions{config.hmac_email_key, config.store_plaintext_password,
-                                             config.store_raw_line};
+        options.normalize = NormalizeOptions{config.store_plaintext_password};
         options.batch_size = config.clickhouse_batch_size;
         options.progress_flush_every = config.progress_flush_every;
         options.max_job_errors = config.max_job_errors;

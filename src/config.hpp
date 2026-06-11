@@ -36,12 +36,8 @@ struct Config {
     std::size_t progress_flush_every = 10'000;
     std::size_t max_job_errors = 1'000;
     std::size_t banner_scan_lines = 50;
-    bool store_raw_line = false;
     bool store_plaintext_password = true;
     double worker_poll_interval_seconds = 2.0;
-
-    // HMAC key for email lookup hashing. Must be stable across the deployment.
-    std::string hmac_email_key = "change-me-hmac-key-min-32-bytes-long-please";
 
     std::string log_level = "INFO";
 };

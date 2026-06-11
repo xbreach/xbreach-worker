@@ -44,10 +44,8 @@ services:
       XBREACH_CLICKHOUSE_DB: ${XBREACH_CLICKHOUSE_DB:-xbreach}
       XBREACH_CLICKHOUSE_USER: ${XBREACH_CLICKHOUSE_USER:-xbreach}
       XBREACH_CLICKHOUSE_PASSWORD: ${XBREACH_CLICKHOUSE_PASSWORD:-xbreach}
-      XBREACH_HMAC_EMAIL_KEY: ${XBREACH_HMAC_EMAIL_KEY:-change-me-hmac-key-min-32-bytes-long-please}
       XBREACH_CLICKHOUSE_BATCH_SIZE: ${XBREACH_CLICKHOUSE_BATCH_SIZE:-50000}
       XBREACH_STORE_PLAINTEXT_PASSWORD: ${XBREACH_STORE_PLAINTEXT_PASSWORD:-true}
-      XBREACH_STORE_RAW_LINE: ${XBREACH_STORE_RAW_LINE:-false}
     volumes:
       - /data/xbreach:/data/xbreach
     networks:
@@ -58,4 +56,5 @@ services:
 # Start the ingest stack first, then `docker compose up --build` here.
 networks:
   xbreach-internal:
+    name: ${XBREACH_DOCKER_NETWORK:-xbreach-internal}
     external: true

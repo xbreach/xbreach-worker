@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <cctype>
 
-#include "crypto/hashing.hpp"
-
 namespace xbreach::worker {
 
 namespace {
@@ -31,12 +29,13 @@ std::string extract_url_domain(std::string_view url) {
 
 LeakRecord normalize(const ParsedFields& fields, std::string_view raw_line,
                      const NormalizeOptions& options) {
+    (void)raw_line;
+
     LeakRecord record;
     record.kind = fields.kind;
 
     if (is_email(fields.identity)) {
         record.identifier = to_lower(fields.identity);
-        record.email_hmac = hmac_sha256_hex(options.hmac_email_key, record.identifier);
     } else {
         record.identifier = fields.identity;
     }
@@ -46,12 +45,8 @@ LeakRecord normalize(const ParsedFields& fields, std::string_view raw_line,
         record.url_domain = extract_url_domain(fields.url);
     }
 
-    record.password_sha256 = sha256_hex(fields.password);
     if (options.store_plaintext_password) {
         record.password = fields.password;
-    }
-    if (options.store_raw_line) {
-        record.raw_line = std::string(raw_line);
     }
 
     return record;

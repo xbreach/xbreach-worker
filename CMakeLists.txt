@@ -24,7 +24,7 @@ find_package(cityhash CONFIG REQUIRED)
 find_package(lz4 CONFIG REQUIRED)
 
 # Core library shared by the executable and the tests. Feature PRs add their
-# translation units (config, snowflake, io, parse, crypto, db, worker) here.
+# translation units (config, snowflake, io, parse, db, worker) here.
 add_library(xbreach_worker_lib
   src/version.cpp
   src/config.cpp
@@ -32,7 +32,6 @@ add_library(xbreach_worker_lib
   src/io/file_reader.cpp
   src/parse/parser.cpp
   src/parse/normalizer.cpp
-  src/crypto/hashing.cpp
   src/db/job_repository.cpp
   src/db/clickhouse_migrations.cpp
   src/db/clickhouse_writer.cpp
