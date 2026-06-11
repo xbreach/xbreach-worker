@@ -55,7 +55,7 @@ ProcessorOptions test_options(const std::string& data_path) {
     options.progress_flush_every = 10'000;
     options.max_job_errors = 1'000;
     options.banner_scan_lines = 50;
-    options.normalize = NormalizeOptions{"key", true, false};
+    options.normalize = NormalizeOptions{true};
     return options;
 }
 

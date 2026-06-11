@@ -19,13 +19,10 @@ struct LeakRecord {
     std::uint64_t line_number = 0;
     RecordKind kind = RecordKind::UserPassword;
 
-    std::string identifier;      // login identity: email or username
-    std::string password;        // empty when plaintext storage is disabled
-    std::string password_sha256; // hex digest, always present
-    std::string email_hmac;      // keyed hash of the identifier when it is an email
+    std::string identifier; // login identity: email or username
+    std::string password;   // empty when plaintext storage is disabled
     std::string url;
     std::string url_domain;
-    std::string raw_line; // empty when raw-line storage is disabled
 };
 
 } // namespace xbreach::worker

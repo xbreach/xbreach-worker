@@ -95,12 +95,10 @@ Config load_config(const EnvLookup& lookup) {
     apply_size(lookup, "XBREACH_PROGRESS_FLUSH_EVERY", config.progress_flush_every);
     apply_size(lookup, "XBREACH_MAX_JOB_ERRORS", config.max_job_errors);
     apply_size(lookup, "XBREACH_BANNER_SCAN_LINES", config.banner_scan_lines);
-    apply_bool(lookup, "XBREACH_STORE_RAW_LINE", config.store_raw_line);
     apply_bool(lookup, "XBREACH_STORE_PLAINTEXT_PASSWORD", config.store_plaintext_password);
     apply_double(lookup, "XBREACH_WORKER_POLL_INTERVAL_SECONDS",
                  config.worker_poll_interval_seconds);
 
-    apply_string(lookup, "XBREACH_HMAC_EMAIL_KEY", config.hmac_email_key);
     apply_string(lookup, "XBREACH_LOG_LEVEL", config.log_level);
 
     return config;

@@ -2,7 +2,7 @@
 
 `xbreach-worker` is the C++ ingestion worker of XBreach. It claims pending jobs from
 Postgres, reads the raw leak file from local storage, parses and normalizes the records,
-generates hashes/HMAC, and batch-writes the result to ClickHouse.
+and batch-writes the result to ClickHouse.
 
 ## Workflow
 

@@ -10,14 +10,11 @@ namespace xbreach::worker {
 
 // Controls how parsed fields are turned into a stored record.
 struct NormalizeOptions {
-    std::string hmac_email_key;
     bool store_plaintext_password = true;
-    bool store_raw_line = false;
 };
 
-// Turns parsed fields into a normalized LeakRecord: lowercases the email and
-// derives its domain, extracts the URL host, computes password_sha256 and (when
-// an email is present) the keyed email_hmac, and honors the storage flags. The
+// Turns parsed fields into a normalized LeakRecord: lowercases email identifiers,
+// extracts the URL host, and honors the plaintext password storage flag. The
 // id/job context fields are left for the caller to populate.
 LeakRecord normalize(const ParsedFields& fields, std::string_view raw_line,
                      const NormalizeOptions& options);
