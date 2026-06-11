@@ -6,7 +6,6 @@ add_executable(xbreach_worker_tests
   test_config.cpp
   test_file_reader.cpp
   test_parser.cpp
-  test_hashing.cpp
   test_normalizer.cpp
   test_job_repository.cpp
   test_clickhouse_migrations.cpp

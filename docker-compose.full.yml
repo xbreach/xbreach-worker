@@ -108,7 +108,6 @@ services:
       XBREACH_POSTGRES_HOST: postgres
       XBREACH_CLICKHOUSE_HOST: clickhouse
       XBREACH_CLICKHOUSE_PORT: 9000
-      XBREACH_HMAC_EMAIL_KEY: change-me-hmac-key-min-32-bytes-long-please
       XBREACH_WORKER_POLL_INTERVAL_SECONDS: 2
     volumes:
       - xbreach-data:/data/xbreach
