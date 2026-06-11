@@ -14,7 +14,12 @@ clickhouse::ClientOptions make_options(const Config& config) {
         .SetPort(static_cast<unsigned>(config.clickhouse_port))
         .SetUser(config.clickhouse_user)
         .SetPassword(config.clickhouse_password)
-        .SetDefaultDatabase(config.clickhouse_db);
+        .SetDefaultDatabase(config.clickhouse_db)
+        // The worker reuses one connection across a long-running job; reconnect
+        // if the server dropped an idle connection, and retry transient sends so
+        // a job does not fail with "closed: Resource temporarily unavailable".
+        .SetPingBeforeQuery(true)
+        .SetSendRetries(3);
 }
 
 } // namespace
